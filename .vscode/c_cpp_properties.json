@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            // compileCommands 失效时，一般是还没编译时，使用 inlcudePath
+            "includePath": [
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/externals/llvm-project/llvm/include",
+                "${workspaceFolder}/externals/llvm-project/mlir/include",
+                "${workspaceFolder}/externals/llvm-project/build/include",
+                "${workspaceFolder}/externals/llvm-project/build/tools/mlir/include",
+                "${workspaceFolder}/externals/stablehlo",
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/c++",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64",
+            "compileCommands": "./build/compile_commands.json"
+        }
+    ],
+    "version": 4
+}

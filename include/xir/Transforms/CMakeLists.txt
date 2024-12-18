@@ -1,7 +1,5 @@
 set(LLVM_TARGET_DEFINITIONS Passes.td)
+# name 影响生成的 register 函数的名字, 由于这些函数被 include 到 xir 命名空间下,
+# 所以使用 Transforms 也不会冲突, 否则应该使用 XIRTransforms
 mlir_tablegen(Passes.h.inc -gen-pass-decls -name Transforms)
-mlir_tablegen(Transforms.capi.h.inc -gen-pass-capi-header --prefix Transforms)
-mlir_tablegen(Transforms.capi.cpp.inc -gen-pass-capi-impl --prefix Transforms)
 add_public_tablegen_target(XIRTransformsPassIncGen)
-
-add_mlir_doc(Passes GeneralPasses ./ -gen-pass-doc)
