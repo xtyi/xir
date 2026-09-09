@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/xir-core"]
+resolver = "2"

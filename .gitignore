@@ -1,0 +1,32 @@
+# Rust build output
+/target/
+
+# Python bytecode and test/tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local environments and packaging output
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+
+# IDE and OS metadata
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local logs and generated compiler artifacts
+*.log
+*.o
+*.so
+*.cubin
+*.ptx
