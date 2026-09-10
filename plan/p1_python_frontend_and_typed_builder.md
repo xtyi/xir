@@ -2,23 +2,22 @@
 
 状态：进行中
 
-## 完成事项
+## 已完成
 
-- [x] 实现 `@kernel` 装饰器和源码捕获。
-- [x] 使用 `ast.parse` 解析 Python 源码。
-- [x] 实现受限语法检查：函数、变量、`with`、`for`、intrinsic 调用。
-- [x] 实现最小 Typed Builder/Node 构造接口。
-- [x] 支持 `shared`、`pipeline`、`role`、`stages` 的最小 API。
-- [x] 建立 Rust 原生 `ModuleBuilder` / `KernelBuilder`，作为 Python binding 的唯一构造后端。
+- [x] `@kernel`、源码行列定位和 `kernel_from_source()` fallback；不执行 source/annotations。
+- [x] 显式 typed parameters、SSA value rebinding、For carried arguments/results、If results/yields。
+- [x] Storage/Buffer/Role/Pipeline/Accumulator declarations，显式 ConcurrentRoles 与 PipelineFor。
+- [x] Load/Store、ticket/event protocol、AsyncCopy、AccumulatorInit/Read、Sqmma 语法。
+- [x] 严格检查 arity/keyword/unpacking；拒绝 defaults、closures、未知语法和旧 stages/wait。
+- [x] 与 Rust 相同的 canonical JSON schema；JSON import 和源码构造均调用 `ModuleBuilder::finish_checked()`。
+- [x] 将 source/value errors 与原生 construction errors 分开报告，缺少 native executable 明确失败。
 
 ## 待做
 
-- [ ] 设计闭包、默认参数和源码不可获取时的报错策略。
-- [ ] 定义 shape/dtype 表达式的常量求值规则。
-- [ ] 增加 JSON AST 导入入口，供非 Python Agent 使用。
-- [ ] 接入 Rust core 的 JSON schema/serde binding。
-- [ ] 用 PyO3 将 Rust Builder 暴露给 `xir` Python 包。
+- [ ] Region-local dynamic views、fragment store/conversion 等语法随核心 contract 扩展。
+- [ ] 如吞吐量需要，用长期 native process 或 PyO3 替换 subprocess transport。
+- [ ] 各种等价表达式 canonicalization；目前只做受限 literal/index expression lowering。
 
-## 完成标准
+## 当前边界
 
-示例 Python DSL 可以生成稳定的 Typed AST；任意未支持的 Python 语法都能在源码位置处被拒绝。
+资源声明位于 executable statements 之前；For induction 和 body-local variables 使用词法作用域。Python 不实现独立 schedule verifier，代码及可运行示例见根目录 README。

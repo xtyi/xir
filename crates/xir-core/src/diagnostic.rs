@@ -1,3 +1,4 @@
+use crate::types::NodeId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -6,18 +7,24 @@ pub enum DiagnosticSeverity {
     Warning,
     Note,
 }
-
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum DiagnosticCode {
     ParseError,
     UnsupportedSyntax,
     UnknownSymbol,
+    DuplicateSymbol,
     InvalidType,
+    InvalidControlFlow,
+    InvalidResource,
+    InvalidPipeline,
+    InvalidParticipation,
+    PendingAccess,
+    InvalidTicket,
     UnsupportedCapability,
-    InternalError,
+    UnsupportedSchema,
 }
-
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub struct SourceSpan {
     pub file: Option<String>,
     pub start_line: u32,
@@ -25,23 +32,19 @@ pub struct SourceSpan {
     pub end_line: u32,
     pub end_column: u32,
 }
-
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Diagnostic {
     pub severity: DiagnosticSeverity,
     pub code: DiagnosticCode,
     pub message: String,
     pub source_span: Option<SourceSpan>,
-    pub node_id: Option<String>,
-    pub related_nodes: Vec<String>,
-    pub repair_hint: Option<String>,
+    pub node_id: Option<NodeId>,
+    pub related_nodes: Vec<NodeId>,
 }
-
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DiagnosticBag {
     pub diagnostics: Vec<Diagnostic>,
 }
-
 impl DiagnosticBag {
     pub fn push(&mut self, diagnostic: Diagnostic) {
         self.diagnostics.push(diagnostic);
@@ -52,7 +55,6 @@ impl DiagnosticBag {
             .any(|d| d.severity == DiagnosticSeverity::Error)
     }
 }
-
 impl Diagnostic {
     pub fn error(code: DiagnosticCode, message: impl Into<String>) -> Self {
         Self {
@@ -62,7 +64,6 @@ impl Diagnostic {
             source_span: None,
             node_id: None,
             related_nodes: vec![],
-            repair_hint: None,
         }
     }
 }

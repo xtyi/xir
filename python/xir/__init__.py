@@ -1,3 +1,13 @@
-from .dsl import DSLParseError, KernelProgram, kernel
+from .dsl import (
+    DSLParseError,
+    IRValidationError,
+    KernelProgram,
+    NativeUnavailableError,
+    kernel,
+    kernel_from_source,
+)
 
-__all__ = ["DSLParseError", "KernelProgram", "kernel"]
+__all__ = [
+    "DSLParseError", "IRValidationError", "KernelProgram", "NativeUnavailableError",
+    "kernel", "kernel_from_source",
+]

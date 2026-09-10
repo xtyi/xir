@@ -2,20 +2,20 @@
 
 状态：待做
 
-## 完成事项
+## 已有基础（不代表本阶段完成）
 
-- [ ] 统一等价节点 spelling、索引表达式和 view 表达式。
-- [ ] 解析资源/role/pipeline/barrier 符号引用。
-- [ ] 物化 stage stride、stage lifetime、resource ownership。
-- [ ] 为异步操作创建 event/token，并推导基本 effects。
-- [ ] 生成 target capability 查询结果。
+- [x] 结构化 IndexExpr 和 typed references，不将动态参数错误地常量化。
+- [x] Builder ID normalization、基础常量计算、原生 declaration/reference checks。
+- [x] Event/ticket 由操作显式声明，基础 effects 在 P4 全量派生。
 
 ## 待做
 
-- [ ] 明确 canonicalize 的幂等性和稳定排序规则。
-- [ ] 设计 elaboration 前后 AST 的版本边界。
-- [ ] 对动态 shape 保留运行时表达式，而不是错误地常量化。
+- [ ] 等价 IR canonicalization、幂等性和保留 NodeId/origin 的变换规范。
+- [ ] Operation registry：解析 instruction、transfer、representation 与 exact target contracts。
+- [ ] 将共同 iteration domain elaborate 为 slot/generation、stage views 与资源生命周期。
+- [ ] 将 publish/consume/release/drain elaborate 为有证据的 target completion/ordering operations。
+- [ ] 记录 target/registry/analysis revision 与 elaboration source mapping。
 
 ## 完成标准
 
-同一语义的不同 DSL 写法产生相同 canonical AST；elaborated AST 不再依赖隐式 stage、ownership 或 token 信息。
+Elaborated AST 显式表达 target 所需的资源和同步语义，adapter 保留 completion、happens-before 与 lease 不变量。当前非空 spec ID 不能代替这些验证。
