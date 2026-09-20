@@ -16,6 +16,8 @@ Schedule AST 是 Agent 可编辑的结构化程序表示，描述计算、数据
 | Representation | Storage、Buffer/View、Fragment 分层；影响正确性的 mapping/swizzle 是 contract，不是可忽略的 hint |
 | Backend responsibility | XIR 决定同步协议并 lowering 到已知语义的 target operations；`mtcc` 完成其实现、最终指令调度和寄存器分配 |
 
+当前先以独立的 CUDA FP32 elementwise 子集跑通 DSL → IR → CUDA → nvcc → GPU 的同步路径，具体支持范围见 [CUDA 实现记录](docs/cuda_elementwise_path.md)。这不改变后续异步协议的设计范围。
+
 第一条完整异步路径面向 exact MP31 target 上的单 CTA GEMM。初始支持一个 producer role、一个 consumer role、固定 slot 数和有界迭代域；允许两者重叠执行。多消费者、嵌套并发组、跨 CTA 协议、非结构化控制流和同一 accumulator 的多条未完成 MMA 链作为后续扩展，不以未定义行为暂时接入。
 
 编译流程为：
@@ -538,10 +540,12 @@ Schema v2 已落地的迁移与后续边界：
 - `ast.rs`：已移除公共可写 operands/result 副本；operation 字段使用 typed ID，Event/Ticket/Accumulator 使用独立引用；已用 PipelineFor 替换 StageFor。
 - `types.rs`：已保留 Storage/Buffer 分层，并用结构化 IndexExpr/MappingSpec 替换字符串索引；fragment 带 participants，verifier 跟踪 accumulator/event/ticket 状态。动态 view、target mapping admission 和 slot/generation elaboration 尚未实现。
 - `NodeMeta` 与分析：effects 已移至 derived analysis，保留 NodeId/source mapping/revision。初始实现每次全量重算，无旧 effects 缓存可复用。
-- `target.rs`：当前只保留 TargetRequest 请求身份，已移除旧能力名称列表；resolved profile 与 operation registry 待做。因此 construction Pass 的总体 verification 仍为 Unknown。
+- `target.rs`：保留 TargetRequest 请求身份，已移除旧能力名称列表。CUDA SM120 有固定 elementwise admission；MUSA resolved profile 与通用 operation registry 待做。静态 report 与外部编译/设备验证分开，construction/target Pass 不自动产生总体 verified 状态。
 - Python frontend 与 builder：已通过 JSON CLI 统一源码解析、JSON import 和 native builder 的验证入口。普通 If/For、资源声明和显式并发 pipeline 有可运行的 construction 示例；缺少 native executable 时明确失败。
 
-当前 verifier 只支持 README 所述的直线 pipeline 子集；复杂分析需要时再派生 CFG/token SSA。MUSA 编译、数值正确性和性能只有真实执行后才能标记完成，静态 protocol 示例不替代这些验证。
+已新增纯 `LaunchIndex` 节点（ThreadIdxX/BlockIdxX/BlockDimX/GridDimX），结果为 Index，无 memory effects；CUDA adapter 根据 builtin lowering 到 launch coordinates。CUDA 的 byte extent/device/grid/block 前提通过生成 wrapper 检查，raw kernel 手动调用仍须满足这些前提。
+
+当前异步 verifier 只支持 README 所述的直线 pipeline 子集；复杂分析需要时再派生 CFG/token SSA。MUSA 编译、数值正确性和性能只有真实执行后才能标记完成，静态 protocol 示例不替代这些验证。
 
 ## 11. Contract 验收样例
 

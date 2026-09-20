@@ -77,8 +77,9 @@ class _Symbol:
 
 
 class _Builder:
-    def __init__(self, filename, block):
+    def __init__(self, filename, block, target=None):
         self.filename = filename
+        self.target = target
         self.block = list(block)
         self.counter = 0
         self.env = {}
@@ -216,6 +217,12 @@ class _Builder:
         if not isinstance(call.func, ast.Name):
             raise self.error("DSL operations must be simple names", call)
         name = call.func.id
+        launch_builtins = {"thread_idx_x": "ThreadIdxX", "block_idx_x": "BlockIdxX", "block_dim_x": "BlockDimX", "grid_dim_x": "GridDimX"}
+        if name in launch_builtins:
+            self.arguments(call, ())
+            result = self.fresh(name, ty="Index")
+            self.emit("LaunchIndex", {"builtin": launch_builtins[name], "result": result.definition()}, call)
+            return result
         if name in _TYPES:
             args = self.arguments(call, ("value",))
             if not isinstance(args["value"], (ast.Constant, ast.UnaryOp)):
@@ -485,12 +492,17 @@ class _Builder:
             if isinstance(decorator, ast.Name) and decorator.id == "kernel":
                 continue
             if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Name) and decorator.func.id == "kernel":
-                args = self.arguments(decorator, ("block",), optional=("block",))
+                args = self.arguments(decorator, ("block", "target"), optional=("block", "target"))
                 if "block" in args:
                     declared = list(self.literal(args["block"]))
                     if self.block and self.block != declared:
                         raise self.error("source decorator and requested block dimensions differ", decorator)
                     self.block = declared
+                if "target" in args:
+                    declared_target = self.literal(args["target"])
+                    if self.target is not None and self.target != declared_target:
+                        raise self.error("source decorator and requested targets differ", decorator)
+                    self.target = declared_target
                 continue
             raise self.error("only the kernel decorator is supported", decorator)
         if fn.args.vararg or fn.args.kwarg or fn.args.kwonlyargs or fn.args.defaults or fn.args.kw_defaults:
@@ -513,15 +525,20 @@ class _Builder:
             else:
                 self.statement(statement)
         self.emit("KernelReturn", None, fn.body[-1])
+        target = self.target if self.target is not None else "musa:mp31"
+        if not isinstance(target, str) or len(target.split(":")) != 2:
+            raise self.error("target must have backend:arch spelling", fn)
+        backend, arch = target.split(":")
         return {"name": fn.name, "schema_version": 2, "module_revision": 0,
-            "target_request": {"backend": "musa", "arch": "mp31"},
+            "target_request": {"backend": backend, "arch": arch},
             "kernels": [{"name": fn.name, "params": params, "block": self.block or [1, 1, 1], **self.declarations, "body": self.body}]}
 
 
 class KernelProgram:
-    def __init__(self, source=None, filename="<kernel>", first_line=1, block=None, module=None):
+    def __init__(self, source=None, filename="<kernel>", first_line=1, block=None, module=None, target=None):
         self.source, self.filename, self.first_line = source, filename, first_line
         self.block = block
+        self.target = target
         self._module = copy.deepcopy(module)
 
     @classmethod
@@ -531,7 +548,7 @@ class KernelProgram:
 
     def build(self, *, verifier=None):
         if self._module is None:
-            self._module = _Builder(self.filename, self.block or []).build(self.source, self.first_line)
+            self._module = _Builder(self.filename, self.block or [], self.target).build(self.source, self.first_line)
         response = _native("construct", self._module, verifier)
         if not response["ok"]:
             raise IRValidationError(response["diagnostics"])
@@ -545,21 +562,32 @@ class KernelProgram:
     def dump(self, *, verifier=None):
         return json.dumps(self.to_dict(verifier=verifier), indent=2)
 
+    def emit_cuda(self, *, verifier=None):
+        self.build(verifier=verifier)
+        response = _native("emit-cuda", self._module, verifier)
+        if not response["ok"]:
+            raise IRValidationError(response["diagnostics"])
+        return response["artifact"]
+
+    def compile_cuda(self, output_dir, *, nvcc="nvcc", verifier=None):
+        from .cuda import compile_cuda
+        return compile_cuda(self, output_dir, nvcc=nvcc, verifier=verifier)
+
     def verify(self, *, verifier=None):
         self.build(verifier=verifier)
         return _native("verify", self._module, verifier)["report"]
 
 
-def kernel_from_source(source, *, filename="<kernel>", block=None):
+def kernel_from_source(source, *, filename="<kernel>", block=None, target=None):
     """Source fallback for notebooks and generated code, without exec/eval."""
-    return KernelProgram(source=source, filename=filename, block=block)
+    return KernelProgram(source=source, filename=filename, block=block, target=target)
 
 
-def kernel(fn=None, *, block=None):
+def kernel(fn=None, *, block=None, target=None):
     def decorate(function):
         try:
             lines, first_line = inspect.getsourcelines(function)
         except (OSError, TypeError) as error:
             raise ValueError("Kernel source is unavailable; use kernel_from_source(source).") from error
-        return KernelProgram("".join(lines), inspect.getsourcefile(function) or "<kernel>", first_line, block)
+        return KernelProgram("".join(lines), inspect.getsourcefile(function) or "<kernel>", first_line, block, target=target)
     return decorate(fn) if fn is not None else decorate

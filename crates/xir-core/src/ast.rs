@@ -152,9 +152,21 @@ pub enum BinaryOp {
     And,
     Or,
 }
+/// Logical launch coordinates, independent of target spelling.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum LaunchBuiltin {
+    ThreadIdxX,
+    BlockIdxX,
+    BlockDimX,
+    GridDimX,
+}
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "kind", content = "data", deny_unknown_fields)]
 pub enum ScheduleNodeKind {
+    LaunchIndex {
+        builtin: LaunchBuiltin,
+        result: ValueDef,
+    },
     Constant {
         value: Literal,
         result: ValueDef,
@@ -298,6 +310,7 @@ impl ScheduleNode {
         use ScheduleNodeKind::*;
         match &self.kind {
             Constant { result, .. }
+            | LaunchIndex { result, .. }
             | Binary { result, .. }
             | Load { result, .. }
             | AccumulatorRead { result, .. } => vec![result],

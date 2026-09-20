@@ -15,10 +15,10 @@
 | P0 | 工程骨架、目标和诊断协议 | 进行中 |
 | P1 | Python 受限 DSL 前端和 Typed Builder | 进行中 |
 | P2 | Typed Schedule AST 核心节点 | 进行中 |
-| P3 | canonicalize / elaborate | 待做 |
+| P3 | canonicalize / elaborate | 进行中 |
 | P4 | Schedule verifier 和派生 Effect IR | 进行中 |
-| P5 | MUSA C emitter | 待做 |
-| P6 | `mtcc` 编译集成和端到端 kernel | 待做 |
+| P5 | CUDA / MUSA emitter | 进行中 |
+| P6 | nvcc / mtcc 编译集成和端到端 kernel | 进行中 |
 | P7 | Agent harness、性能反馈和增量演进 | 待做 |
 
 ## 阶段依赖
@@ -37,4 +37,4 @@ CFG/token SSA 是 P4 的派生分析能力，不是独立的持久化语言层�
 
 ## Schema v2 迁移状态
 
-当前已接通 Python → canonical JSON → Rust Builder/verifier；数据模型、结构化 SSA、role/pipeline 生命周期与派生 effects 有正反例回归。Operation registry、target elaboration、MUSA C、mtcc 和设备测试尚未实现。具体运行方法和限制以 [项目 README](../README.md) 为准。
+当前已接通 Python → canonical JSON → Rust Builder/verifier；数据模型、结构化 SSA、role/pipeline 生命周期与派生 effects 有正反例回归。已新增 CUDA FP32 elementwise 的 target admission、node lowering、nvcc 编译、host wrapper 与 GPU oracle，见 [CUDA 闭环](../docs/cuda_elementwise_path.md)。通用 operation registry、异步 target elaboration、MUSA C 和 mtcc 尚未实现。具体运行方法和限制以 [项目 README](../README.md) 为准。

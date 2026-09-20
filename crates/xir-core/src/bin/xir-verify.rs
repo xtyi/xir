@@ -5,8 +5,8 @@ use xir_core::{deserialize_module, verify_module, Diagnostic, DiagnosticCode, Mo
 
 fn run() -> Result<serde_json::Value, String> {
     let args: Vec<_> = std::env::args().skip(1).collect();
-    if args.len() != 1 || !matches!(args[0].as_str(), "construct" | "verify") {
-        return Err("usage: xir-verify construct|verify < module.json".into());
+    if args.len() != 1 || !matches!(args[0].as_str(), "construct" | "verify" | "emit-cuda") {
+        return Err("usage: xir-verify construct|verify|emit-cuda < module.json".into());
     }
     let mut input = String::new();
     io::stdin()
@@ -23,6 +23,11 @@ fn run() -> Result<serde_json::Value, String> {
     if args[0] == "construct" {
         Ok(match ModuleBuilder::from_module(module).finish_checked() {
             Ok(module) => json!({"ok": true, "module": module, "diagnostics": []}),
+            Err(errors) => json!({"ok": false, "diagnostics": errors.diagnostics}),
+        })
+    } else if args[0] == "emit-cuda" {
+        Ok(match xir_core::cuda::emit_cuda(&module) {
+            Ok(artifact) => json!({"ok": true, "artifact": artifact}),
             Err(errors) => json!({"ok": false, "diagnostics": errors.diagnostics}),
         })
     } else {

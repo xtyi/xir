@@ -11,7 +11,8 @@
 - [x] Ticket 全覆盖、publish completion coverage、consume/release/drain 和 pending accumulator/input lifetime。
 - [x] Pipeline storage 的裸 alias lease 绕过检查；static ranges 和保守 slot-envelope conflict 检查。
 - [x] Effects 全量派生，包含 role/iteration、access/pending completion、event production/observation/publication 与 join。
-- [x] Pass/Fail/Unknown report 与明确 coverage_limits；结构检查通过时总体仍是 Unknown。
+- [x] Pass/Fail/Unknown report 与明确 coverage_limits；结构/target 检查和外部设备 evidence 分开。
+- [x] CUDA SM120 的有限 target admission，验证 FP32 [n] view 和每个访问的线性索引/mask；剩余 ABI 前提由生成 wrapper 检查。
 
 ## 待做
 
@@ -24,4 +25,4 @@
 
 ## 当前边界
 
-每个 role 最多一个 PipelineFor，每轮恰好一个 ticket，异步 protocol 必须位于直线 body，单 accumulator 最多一个 pending update。当前没有证明所有 GPU race/deadlock 被排除，也没有 backend/device evidence；不能将 finish_checked 视为执行授权。
+每个 role 最多一个 PipelineFor，每轮恰好一个 ticket，异步 protocol 必须位于直线 body，单 accumulator 最多一个 pending update。当前 CUDA elementwise 子集有 backend/device evidence；MUSA/通用协议仍没有完整 GPU race/deadlock 证明。finish_checked 仅表示 construction 通过，emission/compilation 还必须通过对应的 target admission。

@@ -1,6 +1,7 @@
 //! Typed schedule IR and conservative construction/protocol validation.
 pub mod ast;
 pub mod builder;
+pub mod cuda;
 pub mod diagnostic;
 pub mod effects;
 pub mod target;

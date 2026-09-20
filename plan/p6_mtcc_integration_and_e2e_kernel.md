@@ -1,8 +1,18 @@
-# P6：`mtcc` 集成与端到端 Kernel
+# P6：nvcc / mtcc 集成与端到端 Kernel
 
-状态：待做
+状态：进行中
 
-## 完成事项
+## CUDA 最小路径已完成
+
+- [x] `compile_cuda()` 调用 nvcc，保存 IR/CUDA/source mapping/编译日志与 shared library。
+- [x] `CompiledCudaKernel.run()` 通过 ctypes 执行同步 host-array ABI。
+- [x] RTX 5060 Laptop SM120 + nvcc 13.1.80 上，Add 24 组边界/尾部测试及 Sub 回归通过。
+- [x] 编译失败、非法参数、CUDA runtime errors、numerical mismatch 分别报告。
+- [ ] Compute Sanitizer：本机 WDDM debugger interface 初始化失败，不计为通过。
+
+详见 [CUDA 闭环与验证记录](../docs/cuda_elementwise_path.md)。尚未做 benchmark 或设备 tensor/stream API。
+
+## MUSA 路径待完成
 
 - [ ] 接入 `mtcc` 命令行或编译 API。
 - [ ] 支持编译日志、错误位置和生成文件保留。

@@ -152,6 +152,7 @@ pub fn derive_effects(module: &Module) -> Vec<NodeEffects> {
                     effect.transitions.push(Transition::Drain(pipeline.clone()))
                 }
                 Constant { .. }
+                | LaunchIndex { .. }
                 | Binary { .. }
                 | If { .. }
                 | For { .. }

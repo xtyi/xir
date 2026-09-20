@@ -25,20 +25,49 @@ pub struct VerificationReport {
     pub coverage_limits: Vec<String>,
 }
 pub fn verify_module(module: &Module) -> VerificationReport {
-    let diagnostics = validate_module(module);
+    let mut diagnostics = validate_module(module);
     let failed = diagnostics.has_errors();
+    let target = if module.target_request.is_cuda() && !failed {
+        let target_diagnostics = crate::cuda::validate_cuda(module);
+        if target_diagnostics.has_errors() {
+            diagnostics
+                .diagnostics
+                .extend(target_diagnostics.diagnostics);
+            CheckStatus::Fail
+        } else {
+            CheckStatus::Pass
+        }
+    } else {
+        CheckStatus::Unknown
+    };
     VerificationReport {
-        status: if failed { CheckStatus::Fail } else { CheckStatus::Unknown },
-        construction: if failed { CheckStatus::Fail } else { CheckStatus::Pass },
-        target: CheckStatus::Unknown,
+        status: if failed || target == CheckStatus::Fail {
+            CheckStatus::Fail
+        } else {
+            CheckStatus::Unknown
+        },
+        construction: if failed {
+            CheckStatus::Fail
+        } else {
+            CheckStatus::Pass
+        },
+        target,
         module_revision: module.module_revision,
         diagnostics: diagnostics.diagnostics,
         effects: derive_effects(module),
-        coverage_limits: vec![
+        coverage_limits: if module.target_request.is_cuda() {
+            vec![
+            "Target admission covers only flat contiguous FP32 elementwise operations with a checked linear index and i < n mask.".into(),
+            "Host pointer validity, disjoint device allocations, byte extents, device identity and launch limits are obligations of the generated wrapper.".into(),
+            "This static report does not include nvcc compilation or numerical/device validation evidence.".into(),
+        ]
+        } else {
+            vec![
             "Target instruction, representation and synchronization adapters are not implemented.".into(),
             "Dynamic bounds, external alias/extent guards and cross-thread access footprints are not fully verified.".into(),
             "No MUSA lowering, toolchain compilation, runtime validation or performance calibration has been performed.".into(),
-        ],
+        ]
+        },
     }
 }
 pub fn validate_module(module: &Module) -> DiagnosticBag {
@@ -576,6 +605,18 @@ impl Verifier<'_> {
                             DiagnosticCode::InvalidControlFlow,
                             "Yield is not valid in this region",
                         );
+                    }
+                }
+                LaunchIndex { builtin, result } => {
+                    if result.ty != TypeRef::Index {
+                        self.error(
+                            Some(node),
+                            DiagnosticCode::InvalidType,
+                            "launch coordinate result must be Index",
+                        );
+                    }
+                    if !matches!(builtin, LaunchBuiltin::ThreadIdxX) {
+                        ctx.uniform.insert(result.id.clone());
                     }
                 }
                 Constant { value, result } => {

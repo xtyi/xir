@@ -1,12 +1,14 @@
 # P3：Canonicalize 与 Elaborate
 
-状态：待做
+状态：进行中
 
 ## 已有基础（不代表本阶段完成）
 
 - [x] 结构化 IndexExpr 和 typed references，不将动态参数错误地常量化。
 - [x] Builder ID normalization、基础常量计算、原生 declaration/reference checks。
 - [x] Event/ticket 由操作显式声明，基础 effects 在 P4 全量派生。
+
+- [x] CUDA SM120 elementwise 的最小 target admission：检查 flat nodes、连续 FP32 view、线性 index/mask 和 ABI；通用 registry 尚未实现。
 
 ## 待做
 

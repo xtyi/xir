@@ -14,8 +14,17 @@ impl TargetRequest {
             arch: "mp31".into(),
         }
     }
+    pub fn cuda_sm120() -> Self {
+        Self {
+            backend: "cuda".into(),
+            arch: "sm_120".into(),
+        }
+    }
+    pub fn is_cuda(&self) -> bool {
+        self.backend == "cuda" && self.arch == "sm_120"
+    }
     pub fn is_known(&self) -> bool {
-        self.backend == "musa" && self.arch == "mp31"
+        (self.backend == "musa" && self.arch == "mp31") || self.is_cuda()
     }
 }
 impl Default for TargetRequest {
